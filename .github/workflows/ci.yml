@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10.3.3
+      - name: Install Python dependencies
+        run: uv sync --locked --extra test
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Build frontend
+        run: |
+          npm ci
+          npm run build
+      - name: Run tests
+        run: uv run pytest --cov
+
+  container:
+    name: Verify container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+      - name: Build container
+        uses: docker/build-push-action@v6.19.2
+        with:
+          context: .
+          file: Containerfile
+          load: true
+          push: false
+          tags: boekhouding:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Test container startup
+        run: scripts/test-container-startup.sh boekhouding:ci

@@ -1,0 +1,19 @@
+{
+  "name": "boekhouding-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:transactions": "vite build --config frontend/app/vite.config.js",
+    "dev:transactions": "vite --config frontend/app/vite.config.js",
+    "build": "vite build --config frontend/app/vite.config.js",
+    "dev": "vite --config frontend/app/vite.config.js"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "@vitejs/plugin-vue": "latest",
+    "bootstrap": "^5.3.8",
+    "vite": "latest",
+    "vue": "latest"
+  }
+}

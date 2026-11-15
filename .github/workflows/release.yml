@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or publish release
+        id: release
+        uses: googleapis/release-please-action@v5.0.0
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          release-type: python
+
+      - name: Check out release branch
+        if: steps.release.outputs.prs_created == 'true'
+        uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+
+      - name: Set up uv
+        if: steps.release.outputs.prs_created == 'true'
+        uses: astral-sh/setup-uv@v10.3.3
+
+      - name: Refresh release lockfile
+        if: steps.release.outputs.prs_created == 'true'
+        run: |
+          uv lock
+          uv lock --check
+          if git diff --quiet -- uv.lock; then
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add uv.lock
+          git commit -m "chore: update uv lockfile"
+          git push origin "${{ fromJSON(steps.release.outputs.pr).headBranchName }}"
+
+      - name: Check out release
+        if: steps.release.outputs.release_created == 'true'
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Docker Buildx
+        if: steps.release.outputs.release_created == 'true'
+        uses: docker/setup-buildx-action@v4.4.1
+
+      - name: Log in to GitHub Container Registry
+        if: steps.release.outputs.release_created == 'true'
+        uses: docker/login-action@v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate container metadata
+        if: steps.release.outputs.release_created == 'true'
+        id: metadata
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.release.outputs.tag_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.release.outputs.tag_name }}
+            type=raw,value=latest
+
+      - name: Build and push container
+        if: steps.release.outputs.release_created == 'true'
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          file: Containerfile
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

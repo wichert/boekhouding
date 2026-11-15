@@ -1,0 +1,61 @@
+body {
+  background: #f8f9fa;
+}
+
+.app-main {
+  padding-bottom: 3rem;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover,
+.clickable-row:focus-visible {
+  --bs-table-bg: rgba(var(--bs-primary-rgb), .08);
+}
+
+.clickable-row:focus-visible {
+  outline: 2px solid rgba(var(--bs-primary-rgb), .5);
+  outline-offset: -2px;
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
+
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .navbar,
+  .tx-view-controls,
+  .tx-view-switcher,
+  .tx-detail-nav,
+  .audit-file-filter,
+  .tx-filter-form,
+  .balance-card-header-summary,
+  .modal {
+    display: none !important;
+  }
+
+  .app-main {
+    padding: 0 !important;
+  }
+
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  .card,
+  .shadow-sm {
+    box-shadow: none !important;
+  }
+
+  .table a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}
